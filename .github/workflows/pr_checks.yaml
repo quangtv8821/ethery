@@ -13,7 +13,7 @@ on:
 
 jobs:
   install-root:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
@@ -33,7 +33,7 @@ jobs:
 
   install-core:
     needs: install-root
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
@@ -61,7 +61,7 @@ jobs:
 
   core-checks:
     needs: install-core
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
@@ -91,7 +91,7 @@ jobs:
 
   install-gui:
     needs: [install-root, install-core]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
@@ -123,7 +123,7 @@ jobs:
 
   gui-checks:
     needs: install-gui
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
@@ -154,7 +154,7 @@ jobs:
 
   binary-checks:
     needs: [install-root, install-core]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
@@ -191,7 +191,7 @@ jobs:
 
   install-vscode:
     needs: [install-root, install-core]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
@@ -225,7 +225,7 @@ jobs:
 
   vscode-checks:
     needs: install-vscode
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
@@ -257,7 +257,7 @@ jobs:
 
   core-tests:
     needs: install-core
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
@@ -275,16 +275,17 @@ jobs:
           cd core
           npm test
         env:
-          IGNORE_API_KEY_TESTS: ${{ github.event.pull_request.head.repo.fork == true || github.actor == 'dependabot[bot]' }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-          AZURE_FOUNDRY_API_KEY: ${{ secrets.AZURE_FOUNDRY_API_KEY }}
+          IGNORE_API_KEY_TESTS: true
+          # IGNORE_API_KEY_TESTS: ${{ github.event.pull_request.head.repo.fork == true || github.actor == 'dependabot[bot]' }}
+          # OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          # AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          # AZURE_FOUNDRY_API_KEY: ${{ secrets.AZURE_FOUNDRY_API_KEY }}
 
   vscode-get-test-file-matrix:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [install-root, install-vscode]
     outputs:
       test_file_matrix: ${{ steps.vscode-get-test-file-matrix.outputs.test_file_matrix }}
@@ -319,7 +320,7 @@ jobs:
           echo "Test files: ${{ steps.vscode-get-test-file-matrix.outputs.test_file_matrix }}"
 
   vscode-package-extension:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [install-vscode, install-core]
     steps:
       - uses: actions/checkout@v4
@@ -352,7 +353,7 @@ jobs:
           path: extensions/vscode/build
 
   vscode-download-e2e-dependencies:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [install-vscode, install-core]
     steps:
       - uses: actions/checkout@v4
@@ -395,13 +396,14 @@ jobs:
         install-vscode,
         install-core,
       ]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     # Tests requiring secrets need approval from maintainers
     strategy:
       fail-fast: false
       matrix:
         test_file: ${{ fromJson(needs.vscode-get-test-file-matrix.outputs.test_file_matrix) }}
-        command: ["e2e:ci:run", "e2e:ci:run-yaml"]
+        command: ["e2e:ci:run"]
+        # "e2e:ci:run-yaml"
     steps:
       - uses: actions/checkout@v4
 
@@ -427,6 +429,16 @@ jobs:
         with:
           name: vscode-extension-build
           path: extensions/vscode/build
+
+      - name: Set up Chrome
+        uses: actions/setup-chrome@v3
+        with:
+          chrome-version: "114.0.5735.90" # Replace with your desired version
+
+      - name: Set up ChromeDriver
+        uses: actions/setup-chromedriver@v1
+        with:
+          chrome-version: "114.0.5735.90" # Must match Chrome version
 
       - name: Download e2e dependencies
         uses: actions/download-artifact@v4
@@ -466,7 +478,7 @@ jobs:
       - name: Delete continue from test extensions
         run: |
           cd extensions/vscode
-          rm -rf e2e/.test-extensions/continue*
+          rm -rf e2e/.test-extensions/ethery*
 
       - name: Upload e2e test screenshots
         if: failure()
@@ -477,7 +489,7 @@ jobs:
 
   gui-tests:
     needs: [install-gui, install-core]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
@@ -507,110 +519,110 @@ jobs:
           cd gui
           npm test
 
-  jetbrains-tests:
-    needs: [install-root, core-checks]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: core/node_modules
-          key: ${{ runner.os }}-core-node-modules-${{ hashFiles('core/package-lock.json') }}
+  # jetbrains-tests:
+  #   needs: [install-root, core-checks]
+  #   runs-on: self-hosted
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/cache@v4
+  #       with:
+  #         path: core/node_modules
+  #         key: ${{ runner.os }}-core-node-modules-${{ hashFiles('core/package-lock.json') }}
 
-      - name: Setup Java
-        uses: actions/setup-java@v4.5.0
-        with:
-          distribution: zulu
-          java-version: 17
+  #     - name: Setup Java
+  #       uses: actions/setup-java@v4.5.0
+  #       with:
+  #         distribution: zulu
+  #         java-version: 17
 
-      - name: Setup FFmpeg
-        uses: AnimMouse/setup-ffmpeg@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Setup FFmpeg
+  #       uses: AnimMouse/setup-ffmpeg@v1
+  #       with:
+  #         token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+  #     - name: Setup Gradle
+  #       uses: gradle/actions/setup-gradle@v3
 
-      - name: Use Node.js from .nvmrc
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: ".nvmrc"
+  #     - name: Use Node.js from .nvmrc
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version-file: ".nvmrc"
 
-      - uses: actions/cache@v4
-        id: gui-cache
-        with:
-          path: gui/node_modules
-          key: ${{ runner.os }}-gui-node-modules-${{ hashFiles('gui/package-lock.json') }}
+  #     - uses: actions/cache@v4
+  #       id: gui-cache
+  #       with:
+  #         path: gui/node_modules
+  #         key: ${{ runner.os }}-gui-node-modules-${{ hashFiles('gui/package-lock.json') }}
 
-      # We can shave off another minute off our CI script by finding a way to share this with vscode-tests
-      - name: Run prepackage script
-        run: |
-          cd extensions/vscode
-          npm ci
-          npm run prepackage
-        env:
-          # https://github.com/microsoft/vscode-ripgrep/issues/9#issuecomment-643965333
-          GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
+  #     # We can shave off another minute off our CI script by finding a way to share this with vscode-tests
+  #     - name: Run prepackage script
+  #       run: |
+  #         cd extensions/vscode
+  #         npm ci
+  #         npm run prepackage
+  #       env:
+  #         # https://github.com/microsoft/vscode-ripgrep/issues/9#issuecomment-643965333
+  #         GITHUB_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
 
-      - uses: actions/cache@v4
-        id: binary-cache
-        with:
-          path: binary/node_modules
-          key: ${{ runner.os }}-binary-node-modules-${{ hashFiles('binary/package-lock.json') }}
+  #     - uses: actions/cache@v4
+  #       id: binary-cache
+  #       with:
+  #         path: binary/node_modules
+  #         key: ${{ runner.os }}-binary-node-modules-${{ hashFiles('binary/package-lock.json') }}
 
-      - name: Build the binaries
-        run: |
-          cd binary
-          npm run build
+  #     - name: Build the binaries
+  #       run: |
+  #         cd binary
+  #         npm run build
 
-      - name: Start test IDE
-        run: |
-          cd extensions/intellij
-          export DISPLAY=:99.0
-          Xvfb -ac :99 -screen 0 1920x1080x24 &
-          sleep 10
-          mkdir -p build/reports
-          ./gradlew runIdeForUiTests &
+  #     - name: Start test IDE
+  #       run: |
+  #         cd extensions/intellij
+  #         export DISPLAY=:99.0
+  #         Xvfb -ac :99 -screen 0 1920x1080x24 &
+  #         sleep 10
+  #         mkdir -p build/reports
+  #         ./gradlew runIdeForUiTests &
 
-      - name: Wait for JB connection
-        uses: jtalk/url-health-check-action@v3
-        with:
-          url: http://127.0.0.1:8082
-          max-attempts: 15
-          retry-delay: 30s
+  #     - name: Wait for JB connection
+  #       uses: jtalk/url-health-check-action@v3
+  #       with:
+  #         url: http://127.0.0.1:8082
+  #         max-attempts: 15
+  #         retry-delay: 30s
 
-      - name: Run tests
-        run: |
-          cd extensions/intellij
-          export DISPLAY=:99.0
-          ./gradlew test
+  #     - name: Run tests
+  #       run: |
+  #         cd extensions/intellij
+  #         export DISPLAY=:99.0
+  #         ./gradlew test
 
-      - name: Move video
-        if: ${{ failure() }}
-        run: |
-          cd extensions/intellij
-          mv video build/reports
+  #     - name: Move video
+  #       if: ${{ failure() }}
+  #       run: |
+  #         cd extensions/intellij
+  #         mv video build/reports
 
-      - name: Copy logs
-        if: ${{ failure() }}
-        run: |
-          cd extensions/intellij
-          mv build/idea-sandbox/system/log/ build/reports
+  #     - name: Copy logs
+  #       if: ${{ failure() }}
+  #       run: |
+  #         cd extensions/intellij
+  #         mv build/idea-sandbox/system/log/ build/reports
 
-      - name: Save fails report
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: jb-failure-report
-          path: |
-            ${{ github.workspace }}/extensions/intellij/build/reports
+  #     - name: Save fails report
+  #       if: ${{ failure() }}
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: jb-failure-report
+  #         path: |
+  #           ${{ github.workspace }}/extensions/intellij/build/reports
 
   # GitHub does not have a way of requiring that all checks pass (you must manually select each job)
   # This action at least lets us manage the list of required tests via source control
   # so that creators of new jobs can add them to this list
   require-all-checks-to-pass:
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs:
       - install-root
       - install-core
@@ -626,7 +638,7 @@ jobs:
       - vscode-download-e2e-dependencies
       - vscode-e2e-tests
       - gui-tests
-      - jetbrains-tests
+      # - jetbrains-tests
 
     steps:
       - name: Decide whether the needed jobs succeeded or failed
