@@ -430,6 +430,16 @@ jobs:
           name: vscode-extension-build
           path: extensions/vscode/build
 
+      - name: Set up Chrome
+        uses: actions/setup-chrome@v3
+        with:
+          chrome-version: "114.0.5735.90" # Replace with your desired version
+
+      - name: Set up ChromeDriver
+        uses: actions/setup-chromedriver@v1
+        with:
+          chrome-version: "114.0.5735.90" # Must match Chrome version
+
       - name: Download e2e dependencies
         uses: actions/download-artifact@v4
         with:
